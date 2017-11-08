@@ -17,6 +17,13 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,8 +41,10 @@ import clarifai2.dto.input.ClarifaiInput;
 import clarifai2.dto.model.Model;
 import clarifai2.dto.model.output.ClarifaiOutput;
 import clarifai2.dto.prediction.Concept;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
@@ -93,7 +102,15 @@ public class MainActivity extends AppCompatActivity {
         mCameraButton = (Button) findViewById(R.id.camera_button);
         mImageView = (ImageView) findViewById(R.id.photo);
         mImageViewJPG = (ImageView) findViewById(R.id.jpgphoto);
-
+        GraphView graph = (GraphView) findViewById(R.id.graph);
+        LineGraphSeries<DataPoint> series = new LineGraphSeries<>(new DataPoint[] {
+                new DataPoint(0, 1),
+                new DataPoint(1, 5),
+                new DataPoint(2, 3),
+                new DataPoint(3, 2),
+                new DataPoint(4, 6)
+        });
+        graph.addSeries(series);
     }
 
     ClarifaiRequest.OnSuccess<List<ClarifaiOutput<Concept>>> onSuccess = new ClarifaiRequest.OnSuccess<List<ClarifaiOutput<Concept>>>() {
@@ -111,21 +128,64 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             if (tagMostLikely != "") {
+//                OkHttpClient client = new OkHttpClient();
+//                String usdaAPI = "R9oOFUARnDJIfMT0g9f5gzhYAtnXQDzkRlzy1sYV";
+//                String url = "https://api.nal.usda.gov/ndb/search/?format=json&q=" + tagMostLikely + "&sort=n&max=25&offset=0&api_key=" + usdaAPI;
+//                Request request = new Request.Builder()
+//                        .url(url)
+//                        .build();
+//                Response resp;
+//                try {
+//                    resp = client.newCall(request).execute();
+//                    String Response = resp.body().string();
+//                    int a = 5;
+//                    JSONObject jsonObject = new JSONObject(Response);
+//
+//                    String[] arr = (String[])jsonObject.get("item");
+//                    int b = 6;
+//
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+
                 OkHttpClient client = new OkHttpClient();
-                String usdaAPI = "R9oOFUARnDJIfMT0g9f5gzhYAtnXQDzkRlzy1sYV";
-                String url = "https://api.nal.usda.gov/ndb/search/?format=json&q=" + tagMostLikely + "&sort=n&max=25&offset=0&api_key=" + usdaAPI;
-                Request request = new Request.Builder()
-                        .url(url)
+                JSONObject obj = new JSONObject();
+                try {
+                    obj.put("query", tagMostLikely);
+                    obj.put("num_servings", 1);
+                    obj.put("use_branded_foods", false);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                MediaType MEDIA_TYPE = MediaType.parse("application/json");
+                RequestBody body = RequestBody.create(MEDIA_TYPE, obj.toString());
+
+                final Request request = new Request.Builder()
+                        .url("https://trackapi.nutritionix.com/v2/natural/nutrients")
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("x-app-id", "2b765529")
+                        .addHeader("x-app-key", "9026fb3ed7035d6cbabdcbbb025faebc")
+                        .addHeader("x-remote-user-id", "roopa.ramanujam")
                         .build();
                 Response resp;
                 try {
                     resp = client.newCall(request).execute();
                     String Response = resp.body().string();
                     int a = 5;
+                    JSONObject jsonObject = new JSONObject(Response);
+                    JSONObject nutritionInfo = (JSONObject) jsonObject.getJSONArray("foods").get(0);
+                    int calories = nutritionInfo.getInt("nf_calories");
+                    String h = "hi";
                 } catch (IOException e) {
                     e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-            }
+
+                }
         }
     };
 
