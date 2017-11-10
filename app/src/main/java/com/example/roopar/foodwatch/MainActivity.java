@@ -19,7 +19,7 @@ import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
+import com.jjoe64.graphview.series.PointsGraphSeries;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,10 +50,20 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
     private static TextView mTextView;
     private static Button mCameraButton;
+    private static Button mButton;
     private static ImageView mImageView;
     private static ImageView mImageViewJPG;
-
+    private int numberOfEntries;
     private String tagMostLikely = "";
+    private ArrayList<Integer> itemsCals = new ArrayList<>();
+    private ArrayList<Integer> itemsCarbs = new ArrayList<>();
+//    private LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
+    //private GraphView graph;
+    private GraphView graph;
+    //private GraphView graphCarbs;
+    private TextView textView8;
+    private TextView textViewCals;
+    private int itemCalories = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +92,10 @@ public class MainActivity extends AppCompatActivity {
 //            }
 //        };
 
+//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+//        numberOfEntries = prefs.getInt("number_entries", 1);
+
+
     }
 
     private void sendClarifaiRequest() {
@@ -89,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
         final ClarifaiClient client = new ClarifaiBuilder(APIKEY).buildSync();
 
 
-        Model<Concept> generalModel = client.getDefaultModels().generalModel();
+        Model<Concept> generalModel = client.getDefaultModels().foodModel();
 
         PredictRequest<Concept> request = generalModel.predict().withInputs(
                 ClarifaiInput.forImage("http://juliandance.org/wp-content/uploads/2016/01/RedApple.jpg")
@@ -100,17 +114,69 @@ public class MainActivity extends AppCompatActivity {
     private void initVars() {
         //mTextView = (TextView) findViewById(R.id.hello_text_view);
         mCameraButton = (Button) findViewById(R.id.camera_button);
-        mImageView = (ImageView) findViewById(R.id.photo);
-        mImageViewJPG = (ImageView) findViewById(R.id.jpgphoto);
-        GraphView graph = (GraphView) findViewById(R.id.graph);
-        LineGraphSeries<DataPoint> series = new LineGraphSeries<>(new DataPoint[] {
-                new DataPoint(0, 1),
-                new DataPoint(1, 5),
-                new DataPoint(2, 3),
-                new DataPoint(3, 2),
-                new DataPoint(4, 6)
-        });
+        mButton = (Button) findViewById(R.id.button);
+        //mImageView = (ImageView) findViewById(R.id.photo);
+//        graph = (GraphView) findViewById(R.id.graph);
+//        graph.getViewport().setMinX(1);
+//        graph.getViewport().setMaxX(50);
+//        graph.getViewport().setMinY(0);
+//        graph.getViewport().setMaxY(500);
+//        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+//        SharedPreferences.Editor editor = preferences.edit();
+//        editor.putInt("number_entries", 1); // value to store
+//        editor.commit();
+        //mydatabase = openOrCreateDatabase("nutrition tracker",MODE_PRIVATE,null);
+
+        numberOfEntries = 0;
+        graph  = (GraphView) findViewById(R.id.graphCalories);
+        //graph.setVisibility(View.GONE);
+        graph.setVisibility(View.INVISIBLE);
+        textView8 = (TextView) findViewById(R.id.textView13);
+        textViewCals = (TextView) findViewById(R.id.textView15);
+    }
+
+    private void graphStuff() {
+        //graph.setVisibility(View.VISIBLE);
+
+        graph.setVisibility(View.VISIBLE);
+
+        PointsGraphSeries<DataPoint> series = new PointsGraphSeries<>();
+        graph.setTitle("Calories Per Food Picture");
+        graph.getGridLabelRenderer().setHorizontalAxisTitle("Food Picture Number");
+        graph.getGridLabelRenderer().setVerticalAxisTitle("Calories");
+        graph.getViewport().setMinX(0);
+        graph.getViewport().setMaxX(10);
+        graph.getViewport().setMinY(0);
+        graph.getViewport().setMaxY(1000);
+        graph.getViewport().setYAxisBoundsManual(true);
+        graph.getViewport().setXAxisBoundsManual(true);
+        //Set<Integer> keys = (Set<Integer>) itemsCals.keySet();
+        for (int i = 0; i < itemsCals.size(); i++) {
+            int j = i;
+            series.appendData(new DataPoint( j + 1, itemsCals.get(i)), true, 100);
+        }
         graph.addSeries(series);
+        series.setShape(PointsGraphSeries.Shape.POINT);
+
+
+//        graphCarbs  = (GraphView) findViewById(R.id.graphCarbs);
+//        LineGraphSeries<DataPoint> seriesCarbs = new LineGraphSeries<>();
+//        graphCarbs.setTitle("Calories Per Picture");
+//        graphCarbs.getGridLabelRenderer().setHorizontalAxisTitle("Picture Number");
+//        graphCarbs.getGridLabelRenderer().setVerticalAxisTitle("Calories");
+//        graphCarbs.getViewport().setMinX(0);
+//        graphCarbs.getViewport().setMaxX(10);
+//        graphCarbs.getViewport().setMinY(0);
+//        graphCarbs.getViewport().setMaxY(500);
+//        graphCarbs.getViewport().setYAxisBoundsManual(true);
+//        graphCarbs.getViewport().setXAxisBoundsManual(true);
+//        //Set<Integer> keys = (Set<Integer>) itemsCals.keySet();
+//        for (int i = 0; i < itemsCarbs.size(); i++)
+//            seriesCarbs.appendData(new DataPoint(i+1, itemsCarbs.get(i)), true, 100);
+//        graphCarbs.addSeries(series);
+
+        //DataPoint newPoint = new DataPoint(x, y);
+//        series.appendData(newPoint, false, 10);
     }
 
     ClarifaiRequest.OnSuccess<List<ClarifaiOutput<Concept>>> onSuccess = new ClarifaiRequest.OnSuccess<List<ClarifaiOutput<Concept>>>() {
@@ -166,9 +232,9 @@ public class MainActivity extends AppCompatActivity {
                         .url("https://trackapi.nutritionix.com/v2/natural/nutrients")
                         .post(body)
                         .addHeader("Content-Type", "application/json")
-                        .addHeader("x-app-id", "2b765529")
-                        .addHeader("x-app-key", "9026fb3ed7035d6cbabdcbbb025faebc")
-                        .addHeader("x-remote-user-id", "roopa.ramanujam")
+                        .addHeader("x-app-id", "8d7950fe")
+                        .addHeader("x-app-key", "4585c51df5f6052af23a24c87f6b0139")
+                        .addHeader("x-remote-user-id", "roopa.r")
                         .build();
                 Response resp;
                 try {
@@ -178,7 +244,18 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject jsonObject = new JSONObject(Response);
                     JSONObject nutritionInfo = (JSONObject) jsonObject.getJSONArray("foods").get(0);
                     int calories = nutritionInfo.getInt("nf_calories");
+                    itemCalories = calories;
+                    int carbs = nutritionInfo.getInt("nf_total_carbohydrate");
                     String h = "hi";
+
+//                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+//                    SharedPreferences.Editor editor = preferences.edit();
+//                    editor.putInt("number_entries",numberOfEntries++);
+//                    editor.apply();
+                    itemsCals.add(calories);
+                    itemsCarbs.add(numberOfEntries, carbs);
+                    graphStuff();
+                    numberOfEntries++;
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (JSONException e) {
@@ -198,6 +275,21 @@ public class MainActivity extends AppCompatActivity {
                 dispatchTakePictureIntent();
             }
         });
+
+        mButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateItems();
+            }
+        });
+
+
+    }
+
+    private void updateItems() {
+        textView8.setText(tagMostLikely);
+        String itemCaloriesString = "" + itemCalories;
+        textViewCals.setText(itemCaloriesString);
     }
 
     static final int REQUEST_TAKE_PHOTO = 1;
@@ -211,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
-            mImageView.setImageBitmap(imageBitmap);
+            //mImageView.setImageBitmap(imageBitmap);
 
             String extStorageDirectory = Environment.getExternalStorageDirectory().getAbsolutePath().toString();
             OutputStream outStream = null;
@@ -235,8 +327,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
             Uri savedImageURI = Uri.parse(file.getAbsolutePath());
-
-            mImageViewJPG.setImageURI(savedImageURI);
 
             String APIKEY = "e14859a3ccae40a095a45a2fde6c8d57";
             final ClarifaiClient client = new ClarifaiBuilder(APIKEY).buildSync();
